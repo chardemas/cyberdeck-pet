@@ -1,0 +1,130 @@
+{
+  "drink_left": {
+    "frames": 8,
+    "fps": 4
+  },
+  "drink_right": {
+    "frames": 8,
+    "fps": 4
+  },
+  "eat_left": {
+    "frames": 8,
+    "fps": 7
+  },
+  "eat_right": {
+    "frames": 8,
+    "fps": 7
+  },
+  "gallop_down": {
+    "frames": 6,
+    "fps": 12
+  },
+  "gallop_left": {
+    "frames": 6,
+    "fps": 12
+  },
+  "gallop_right": {
+    "frames": 6,
+    "fps": 12
+  },
+  "gallop_up": {
+    "frames": 6,
+    "fps": 12
+  },
+  "graze_left": {
+    "frames": 8,
+    "fps": 5
+  },
+  "graze_right": {
+    "frames": 8,
+    "fps": 5
+  },
+  "idle_down": {
+    "frames": 2,
+    "fps": 1.5
+  },
+  "idle_left": {
+    "frames": 9,
+    "fps": 6
+  },
+  "idle_right": {
+    "frames": 9,
+    "fps": 6
+  },
+  "idle_up": {
+    "frames": 1,
+    "fps": 1
+  },
+  "jump_down": {
+    "frames": 13,
+    "fps": 16
+  },
+  "jump_left": {
+    "frames": 16,
+    "fps": 16
+  },
+  "jump_right": {
+    "frames": 16,
+    "fps": 16
+  },
+  "jump_up": {
+    "frames": 14,
+    "fps": 16
+  },
+  "rear_down": {
+    "frames": 11,
+    "fps": 10
+  },
+  "rear_left": {
+    "frames": 12,
+    "fps": 10
+  },
+  "rear_right": {
+    "frames": 12,
+    "fps": 10
+  },
+  "rear_up": {
+    "frames": 10,
+    "fps": 10
+  },
+  "sleep_left": {
+    "frames": 1,
+    "fps": 1
+  },
+  "sleep_right": {
+    "frames": 1,
+    "fps": 1
+  },
+  "trot_down": {
+    "frames": 8,
+    "fps": 12
+  },
+  "trot_left": {
+    "frames": 8,
+    "fps": 12
+  },
+  "trot_right": {
+    "frames": 8,
+    "fps": 12
+  },
+  "trot_up": {
+    "frames": 8,
+    "fps": 12
+  },
+  "walk_down": {
+    "frames": 8,
+    "fps": 10
+  },
+  "walk_left": {
+    "frames": 9,
+    "fps": 10
+  },
+  "walk_right": {
+    "frames": 9,
+    "fps": 10
+  },
+  "walk_up": {
+    "frames": 8,
+    "fps": 10
+  }
+}
