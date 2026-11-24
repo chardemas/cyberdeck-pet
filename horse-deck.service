@@ -1,0 +1,25 @@
+# systemd user service: starts the horse full-screen once the desktop is up.
+# install_pi.sh fills in @PROJECT_DIR@ and copies this to
+# ~/.config/systemd/user/horse-deck.service.
+
+[Unit]
+Description=Horse Deck (pixel-art horse)
+After=graphical-session.target
+
+[Service]
+Type=simple
+WorkingDirectory=@PROJECT_DIR@
+# The desktop (labwc on current Raspberry Pi OS) provides an X display on :0
+# through Xwayland. Wait up to 60 s for it after login, then 2 s more.
+Environment=DISPLAY=:0
+Environment=PYTHONUNBUFFERED=1
+ExecStartPre=/bin/sh -c 'n=0; while [ ! -S /tmp/.X11-unix/X0 ]; do n=$$((n+1)); [ $$n -ge 60 ] && exit 1; sleep 1; done; sleep 2'
+ExecStart=@PROJECT_DIR@/.venv/bin/python main.py --fullscreen
+# Restart after a crash, but not after Escape (a clean exit), so you can get
+# to the desktop for maintenance.
+Restart=on-failure
+RestartSec=3
+TimeoutStartSec=90
+
+[Install]
+WantedBy=default.target

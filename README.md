@@ -13,6 +13,8 @@ source .venv/bin/activate
 pip install pygame
 ```
 
+That's all a laptop needs. For the Pi, see [On the Pi](#on-the-pi).
+
 ## Horse art
 
 The horse comes from the Horse Sprite Asset Pack by Onfe (see
@@ -93,6 +95,9 @@ Settings are in `config.py`:
 - `MOTION_COOLDOWN`: after motion, the horse ignores the sensor for 20 seconds.
 - `SOUND_VOLUME`, `AMBIENT_VOLUME`.
 
+To test each part on its own (over SSH, no screen needed):
+`python tools/hwcheck.py pir`, `leds` or `sound`.
+
 The LED strip uses SPI, so SPI must be on (`sudo raspi-config` → Interface
 Options → SPI). LED 0 is the strip's input end; the effects assume it starts
 at the top center, behind the PIR, and runs clockwise as seen from the front.
@@ -117,6 +122,123 @@ night. All are generated in code the first time the game runs and cached in
 use copyrighted audio.
 
 The ambient sound switches from day to night with the clock.
+
+## On the Pi
+
+For a Raspberry Pi 4 running Raspberry Pi OS (64-bit, with desktop). In
+Raspberry Pi Imager's settings, set Wi-Fi, a hostname (say `horsedeck`), a
+username, and turn on SSH.
+
+**1. Copy the project over** from your laptop (rsync skips `.venv`, `.git` and
+the Pi's `state.json`):
+
+```sh
+./deploy.sh <user>@horsedeck.local
+```
+
+or by hand:
+
+```sh
+rsync -av --exclude .git/ --exclude .venv/ --exclude __pycache__/ \
+  --exclude .cache/ --exclude assets/source/ --exclude state.json \
+  ./ <user>@horsedeck.local:~/cyberdeck-pet/
+```
+
+**2. Install, once,** over SSH:
+
+```sh
+ssh <user>@horsedeck.local
+cd ~/cyberdeck-pet && bash install_pi.sh
+sudo reboot
+```
+
+`install_pi.sh` installs pygame, gpiozero, lgpio and spidev from apt, makes a
+`.venv` that can see them (`--system-site-packages`) and pip-installs the
+Adafruit LED library into it. It turns on SPI, desktop auto-login and "never
+blank the screen", then installs and enables the `horse-deck` user service.
+
+**3. Test each part** before relying on autostart:
+
+```sh
+cd ~/cyberdeck-pet
+.venv/bin/python tools/hwcheck.py all
+```
+
+After the reboot the horse starts full-screen by itself once the desktop is
+up. Escape quits to the desktop; a crash restarts it after 3 seconds.
+
+**Updating:** run `./deploy.sh <user>@horsedeck.local` again. It copies the
+changes and restarts the service.
+
+### Service commands (over SSH)
+
+```sh
+systemctl --user start horse-deck     # start now
+systemctl --user stop horse-deck      # stop (saves state, LEDs off)
+systemctl --user restart horse-deck   # after copying a new version
+systemctl --user status horse-deck    # is it running?
+journalctl --user -u horse-deck -f    # live logs (Ctrl+C to leave)
+systemctl --user disable horse-deck   # stop starting it at boot
+```
+
+The service lives in `~/.config/systemd/user/horse-deck.service`, made from
+`horse-deck.service` in this folder. It waits for the desktop's display, runs
+`.venv/bin/python main.py --fullscreen` (no cursor), and needs desktop
+auto-login, since a user service only runs while you're logged in.
+
+## Troubleshooting
+
+Check power, wiring and the screen's settings first. Logs:
+`journalctl --user -u horse-deck -b`. The game also prints a line at startup
+when a hardware part turns itself off (`[sensors] ...`, `[lights] ...`).
+
+**Lightning-bolt icon, random reboots, flicker (under-voltage).**
+`vcgencmd get_throttled` should print `throttled=0x0`; anything else means the
+power dipped at some point. Use a 5V/3A supply and a short, thick USB-C cable.
+The screen and LED strip both draw from the Pi, so keep `LED_BRIGHTNESS` low.
+
+**Wrong resolution or a black screen.** Use the micro-HDMI port nearest the
+USB-C power port. If the picture is the wrong size, add this to the end of the
+single line in `/boot/firmware/cmdline.txt` (space-separated) and reboot:
+`video=HDMI-A-1:800x480M@60D`
+
+**Screen rotated.** Fix it in Preferences → Screen Configuration (right-click
+the screen → Orientation). The game always draws 800x480 landscape.
+
+**Touch is offset or goes the wrong way** (usually after rotating). Make sure
+the screen's USB cable is plugged in, then map touch to the HDMI screen: in
+`~/.config/labwc/rc.xml`, inside `<openbox_config>`, add
+`<touch deviceName="..." mapToOutput="HDMI-A-1" />`, with the touch device's
+name from `libinput list-devices`. Log out and back in.
+
+**The service doesn't start.** `systemctl --user status horse-deck`. "Failed
+at step EXEC" means `.venv` is missing: run `install_pi.sh`. If
+ExecStartPre timed out, desktop auto-login is off: `sudo raspi-config` →
+System Options → Boot / Auto Login → Desktop Autologin.
+
+**No sound.** Right-click the speaker icon on the desktop's top bar and pick
+the USB sound card, or over SSH: `wpctl status`, then
+`wpctl set-default <id of the USB sink>`. Test with
+`.venv/bin/python tools/hwcheck.py sound`. The speaker goes in the card's
+headphone jack, not the mic jack.
+
+**PIR triggers constantly or never.** Give it about a minute after power-up to
+settle. Turn the time dial fully counterclockwise (shortest hold) and lower the
+sensitivity dial. HC-SR501s also misfire next to heat and radio noise, so keep
+the dome away from the Pi's Wi-Fi antenna and the LED strip's wires. Watch it
+with `.venv/bin/python tools/hwcheck.py pir`.
+
+**LEDs flicker, stay dark or show wrong colors.**
+- Dark: SPI must be on (`ls /dev/spidev*` should list a device; reboot after
+  `install_pi.sh`), and the data wire must go to the strip's input end.
+- Wrong colors everywhere (red and green swapped): change `LED_PIXEL_ORDER`.
+- Flicker or a few random colors: check the shared ground, the 330 ohm
+  resistor and keep the data wire short. If it continues, add
+  `core_freq_min=500` to `/boot/firmware/config.txt` (the SPI clock follows
+  the CPU core clock on a Pi 4), and then the optional 74AHCT125 level
+  shifter.
+- Effects starting from the wrong place: LED 0 belongs at top center behind
+  the PIR, running clockwise seen from the front.
 
 ## Day and night
 

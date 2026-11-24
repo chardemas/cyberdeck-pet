@@ -6,6 +6,8 @@ Input and test keys are listed in controls.py.
 """
 
 import argparse
+import signal
+import sys
 
 import pygame
 
@@ -79,6 +81,10 @@ def main() -> None:
     args = parse_args()
     if args.mock:
         config.MOCK = True
+
+    # `systemctl --user stop` sends SIGTERM. Turn it into a normal exit so the
+    # finally block below still saves state.json and switches the LEDs off.
+    signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
 
     pygame.init()
     flags = pygame.FULLSCREEN if args.fullscreen else 0

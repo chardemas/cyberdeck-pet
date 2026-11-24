@@ -1,0 +1,9 @@
+# On a laptop, only pygame is needed (pip install pygame); the hardware
+# libraries below are for the Pi.
+#
+# On the Pi, install_pi.sh installs pygame, gpiozero, lgpio and spidev from apt
+# (prebuilt for Raspberry Pi OS) and makes the venv with --system-site-packages,
+# so pip only has to add the Adafruit LED libraries.
+pygame>=2.1
+gpiozero>=2.0                          # PIR motion sensor
+adafruit-circuitpython-neopixel-spi    # WS2812B strip over SPI (pulls in Adafruit-Blinka)
