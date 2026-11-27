@@ -12,7 +12,9 @@ States
   eat       eats a treat it walked to (lowers hunger a lot).
   sniff     not hungry enough: sniffs the treat, then wanders off. The treat
             stays, and the horse comes back for it once it's hungry.
-  sleep     dozes standing up until woken.
+  sleep     dozes from bedtime until dawn. Still responsive: someone walking
+            by or a treat wakes it gently (no startle). It greets them or
+            eats, stands about drowsily for STAY_UP seconds, then dozes off.
 
 Mood (happy, calm or lonely) comes from how often it's been fed lately and how
 long since anyone walked by. It only changes idle habits: a happy horse
@@ -54,10 +56,11 @@ SLEEP_HUNGER_RATE = 0.5   # hunger rises at half speed while asleep
 FED_HALF_LIFE = 6 * 3600  # the "fed lately" score halves every 6 hours
 LONELY_AFTER = 3 * 3600   # awake this long without seeing anyone: lonely
 HAPPY_FED = 1.5           # fed-lately score that makes the horse happy
+STAY_UP = 20              # idle seconds a horse woken at night stays up
 
 # Mood: (idle seconds min, max), play multiplier for jump and gallop chances.
 MOOD_IDLE = {"happy": ((2, 4), 1.6), "calm": ((3, 6), 1.0), "lonely": ((5, 9), 0.3)}
-BUSY = {SLEEP, JUMP, STARTLED, EAT}  # states a new treat can't interrupt
+BUSY = {JUMP, STARTLED, EAT}  # states a new treat can't interrupt
 
 
 class Horse:
@@ -71,6 +74,8 @@ class Horse:
         self.treat = None          # the treat being eaten
         self.fed_score = 0.0       # +1 per treat eaten, fading with FED_HALF_LIFE
         self.lonely_time = 0.0     # awake seconds since motion was last seen
+        self.drowsy = False        # it's bedtime (the game sets this)
+        self.stay_up = 0.0         # idle seconds left before dozing off again
         self.target = (self.x, self.y)
         self.then = None           # what to do when the current state ends
         self.effects: list[tuple[str, float, float]] = []
@@ -102,7 +107,14 @@ class Horse:
         startled = self.quiet >= STARTLE_AFTER
         self.quiet = 0.0
         self.lonely_time = 0.0
-        if self.state in (SLEEP, EAT, JUMP, STARTLED):
+        if self.state == SLEEP:  # wakes gently and comes over, no rearing
+            self.stay_up = STAY_UP
+            self._trot_to_front()
+            return
+        if self.drowsy:
+            self.stay_up = STAY_UP
+            startled = False
+        if self.state in (EAT, JUMP, STARTLED):
             return
         if startled:
             self._enter(STARTLED, duration=self.anim_length("rear", self.facing),
@@ -133,7 +145,10 @@ class Horse:
 
     def notice_treat(self, treat) -> None:
         """A treat just landed: go to it now, unless busy (then it waits)."""
-        if self.state not in BUSY:
+        if self.state == SLEEP:  # wakes up for it (if it can reach it)
+            if self._go_to_treat(treat):
+                self.stay_up = STAY_UP
+        elif self.state not in BUSY:
             self._go_to_treat(treat)
 
     def sleep(self) -> None:
@@ -177,6 +192,11 @@ class Horse:
                                 key=lambda t: math.dist((t.x, t.y), (self.x, self.y))):
                 if self._go_to_treat(treat):
                     return
+        if self.drowsy:  # up in the night: just stand, looking out sleepily
+            self.stay_up = max(0.0, self.stay_up - self.duration)
+            self.facing = "down"
+            self._enter(IDLE, duration=min(self.rng.uniform(3, 6), max(self.stay_up, 0.5)))
+            return
         r = self.rng.random()
         graze = 0.25 + 0.5 * self.hunger / 100  # hungrier, grazes more
         play = 0.0 if self.hungry else MOOD_IDLE[self.mood][1]
@@ -255,7 +275,8 @@ class Horse:
                 self.fed_score += 1.0
             for _ in range(4):
                 self.effects.append(("sparkle", *self.head()))
-            if self.rng.random() < GALLOP_AFTER_TREAT and self._start_gallop():
+            if (not self.drowsy and self.rng.random() < GALLOP_AFTER_TREAT
+                    and self._start_gallop()):
                 return
             self._enter(IDLE)
 

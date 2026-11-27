@@ -46,6 +46,7 @@ class Lights:
         self._sparkle = [0.0] * count
         self._strip = None
         self._last_sent = None
+        self._since_send = math.inf   # seconds since the last strip update
         self.status = "mock (drawn on screen)" if mock else "off"
         if not mock:
             try:
@@ -100,11 +101,16 @@ class Lights:
             colors.append(c)
         self.colors = colors
 
-        if self._strip is not None and colors != self._last_sent:
+        # Rate-limited: every show() is a chance for the strip to misread the
+        # 3.3V signal and flash, so send at most LED_UPDATE_HZ times a second.
+        self._since_send += dt
+        if (self._strip is not None and colors != self._last_sent
+                and self._since_send >= 1 / config.LED_UPDATE_HZ):
             for i, color in enumerate(colors):
                 self._strip[i] = color
             self._strip.show()
             self._last_sent = colors
+            self._since_send = 0.0
 
     def close(self) -> None:
         """Turn the strip off (called when the program exits)."""

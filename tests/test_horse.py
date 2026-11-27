@@ -27,7 +27,7 @@ ALLOWED = {
     ("idle", "walk"), ("idle", "graze"), ("idle", "gallop"), ("idle", "sleep"),
     ("walk", "idle"), ("graze", "idle"), ("drink", "idle"), ("jump", "idle"),
     ("gallop", "idle"), ("trot", "idle"), ("eat", "idle"), ("sniff", "walk"),
-    ("sniff", "idle"), ("sleep", "idle"),
+    ("sniff", "idle"), ("sleep", "idle"), ("sleep", "trot"), ("sleep", "walk"),
     ("walk", "walk"), ("walk", "drink"), ("walk", "jump"), ("walk", "eat"),
     ("walk", "sniff"), ("eat", "gallop"), ("startled", "trot"), ("startled", "idle"),
 }
@@ -76,11 +76,18 @@ class Events(unittest.TestCase):
         step(h, 1.1)
         self.assertEqual(h.state, "trot")
 
-    def test_sleeping_horse_ignores_motion(self):
+    def test_sleeping_horse_wakes_gently_for_motion(self):
         h = new_horse()
+        h.drowsy = True
+        h.quiet = H.STARTLE_AFTER + 1  # a long quiet night: still no rearing
         h.sleep()
         h.motion()
-        self.assertEqual(h.state, "sleep")
+        self.assertEqual(h.state, "trot")
+        self.assertEqual(h.stay_up, H.STAY_UP)
+
+    def test_wake_at_dawn(self):
+        h = new_horse()
+        h.sleep()
         h.wake()
         self.assertEqual(h.state, "idle")
 

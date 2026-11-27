@@ -93,8 +93,11 @@ def main() -> None:
     if args.fullscreen:
         pygame.mouse.set_visible(False)
 
-    canvas = pygame.Surface((config.INTERNAL_W, config.INTERNAL_H))
-    scaled = pygame.Surface(controls.view_rect(screen.get_size()).size)
+    # 24-bit, no alpha channel. On macOS the window surface has one, and plain
+    # Surfaces copy it; the sky wash's blend then zeroes the alpha and the
+    # meadow shows up black. Without an alpha channel every pixel is opaque.
+    canvas = pygame.Surface((config.INTERNAL_W, config.INTERNAL_H), 0, 24)
+    scaled = pygame.Surface(controls.view_rect(screen.get_size()).size, 0, 24)
     clock = daynight.GameClock(speed=args.speed, start_hour=parse_hour(args.time))
     game = Game(clock=clock, save_path=None if args.no_save else config.STATE_FILE)
     font = pygame.font.Font(None, 20)

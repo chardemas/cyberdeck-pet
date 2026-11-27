@@ -39,6 +39,10 @@ LED_COUNT = 42              # SET THIS to the number of LEDs you actually cut.
                             # 42 fits a 6x8" frame on a 60 LED/m strip.
 LED_BRIGHTNESS = 0.2        # 0 to 1. Keep it low: the Pi's 5V pin powers the strip.
 LED_PIXEL_ORDER = "GRB"     # your strip's color order (the SEZO strip is GRB)
+LED_UPDATE_HZ = 10          # max strip updates per second. Each update is a
+                            # chance for the 3.3V data signal to be misread
+                            # (a bright flash), so fewer is safer. A 74AHCT125
+                            # level shifter fixes the cause.
 
 # Where the horse's hunger and mood are saved between runs.
 STATE_FILE = Path(__file__).parent / "state.json"

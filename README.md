@@ -246,8 +246,10 @@ The meadow follows the real time of day (`daynight.py`): a soft pink dawn
 around 5:30 to 7:30, clear day, a warm sunset from about 18:30, and a blue
 night with fireflies from about 20:45. The LED strip and the sounds follow
 along. The horse goes to sleep at 21:00 (once it finishes what it's doing) and
-wakes at 6:30; asleep, it gets hungry at half speed. Change `BEDTIME` and
-`WAKE_UP` in `daynight.py`.
+wakes at 6:30; asleep, it gets hungry at half speed. It still responds at
+night: walking by or dropping a treat wakes it gently (no rearing), it comes
+over or eats, stands about sleepily for 20 seconds (`STAY_UP` in `horse.py`),
+then dozes off again. Change `BEDTIME` and `WAKE_UP` in `daynight.py`.
 
 The Pi has no clock battery, so it gets the time from the internet after it
 boots. At normal speed the game reads the clock fresh every frame, so it
@@ -287,7 +289,7 @@ returns to idle when it ends (sleep waits to be woken).
 | startled | Rears up when motion comes after 5 quiet minutes, then trots over |
 | eat | Eats a treat for 4 seconds with hearts; hunger drops by 35 |
 | sniff | Not hungry enough: sniffs the treat, then wanders off |
-| sleep | Dozes standing up, with drifting z's, from bedtime until dawn |
+| sleep | Dozes with drifting z's from bedtime until dawn; motion or a treat wakes it briefly |
 
 Hunger goes from 0 to 100 over about 4 hours. At 70 or more the horse is
 hungry: it grazes about three times as often, wanders near the front, faces

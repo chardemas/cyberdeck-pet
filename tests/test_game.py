@@ -84,6 +84,26 @@ class DayAndNight(unittest.TestCase):
     def test_starting_at_night_starts_asleep(self):
         self.assertEqual(noon_game(hour=2.0).horse.state, "sleep")
 
+    def test_motion_at_night_wakes_it_then_it_dozes_off(self):
+        g = noon_game(hour=2.0)
+        g.fake_motion()
+        run(g, 0.1)
+        self.assertEqual(g.horse.state, "trot")
+        self.assertTrue(run(g, 15, until=lambda g: g.horse.state == "idle"))
+        run(g, 5)
+        self.assertNotEqual(g.horse.state, "sleep")  # stays up a little
+        self.assertTrue(run(g, 40, until=lambda g: g.horse.state == "sleep"))
+
+    def test_treat_at_night_wakes_it_to_eat(self):
+        g = noon_game(hour=2.0)
+        g.horse.hunger = 80
+        self.assertTrue(g.feed())
+        run(g, 0.1)
+        self.assertNotEqual(g.horse.state, "sleep")
+        self.assertTrue(run(g, 30, until=lambda g: g.horse.state == "eat"))
+        self.assertTrue(run(g, 60, until=lambda g: g.horse.state == "sleep"))
+        self.assertEqual(g.world.treats_waiting(), 0)
+
     def test_horse_finishes_what_its_doing_before_bed(self):
         g = noon_game(hour=daynight.BEDTIME + 0.1)
         g.horse.wake()

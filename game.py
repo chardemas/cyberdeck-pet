@@ -48,6 +48,7 @@ class Game:
             self.load_note = save.load(save_path, self.horse)
             print(f"[save] {self.load_note}")
         if daynight.is_bedtime(self.clock.hour):
+            self.horse.drowsy = True
             self.horse.sleep()  # started at night: already asleep
         self._last_state = self.horse.state
 
@@ -122,13 +123,17 @@ class Game:
             self.save_now()
 
     def _bedtime(self) -> None:
-        """Sleep at bedtime (once it's done what it's doing), wake at dawn."""
+        """Sleep at bedtime (once it's done what it's doing, and has stayed
+        up a little if something woke it), wake at dawn."""
         horse = self.horse
-        if daynight.is_bedtime(self.clock.hour):
-            if horse.state == "idle":
+        horse.drowsy = daynight.is_bedtime(self.clock.hour)
+        if horse.drowsy:
+            if horse.state == "idle" and horse.stay_up <= 0:
                 horse.sleep()
-        elif horse.state == "sleep":
-            horse.wake()
+        else:
+            horse.stay_up = 0.0
+            if horse.state == "sleep":
+                horse.wake()
 
     def _react_to_state(self) -> None:
         """Sounds and lights for what the horse just started (or stopped) doing."""
